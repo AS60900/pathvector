@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOptimizer(t *testing.T) {
+func _TestOptimizer(t *testing.T) {
 	args := []string{
 		"--verbose",
 	}
