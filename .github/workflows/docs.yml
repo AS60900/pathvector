@@ -24,7 +24,7 @@ jobs:
 
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.24
 
       - name: Generate docs
         run: go generate -x
@@ -39,4 +39,4 @@ jobs:
           build_dir: docs/build/
           fqdn: pathvector.io
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
