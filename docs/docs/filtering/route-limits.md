@@ -22,3 +22,4 @@ limit is tripped. The default is `disable`.
 `restart` restarts the session
 
 `disable` disables the session until it's manually enabled
+
