@@ -41,3 +41,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pathvector-artifacts
+          path: dist/
