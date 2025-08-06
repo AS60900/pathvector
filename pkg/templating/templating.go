@@ -17,9 +17,11 @@ import (
 )
 
 var (
-	protocolNames       []string
-	protocolNameMap     = map[string]*Protocol{} // bird name:protocol
-	protocolNameMapLock = sync.Mutex{}
+    protocolNames       []string
+    protocolNamesLock   = sync.Mutex{}
+
+    protocolNameMap     = map[string]*Protocol{}
+    protocolNameMapLock = sync.Mutex{}
 )
 
 // Wrapper is passed to the peer template
@@ -196,20 +198,26 @@ var funcMap = template.FuncMap{
 		protoName := fmt.Sprintf("%s_AS%d_v%s", *s, *asn, af)
 		i := 1
 		for {
+			protocolNamesLock.Lock()
 			if !util.Contains(protocolNames, protoName) {
 				protocolNames = append(protocolNames, protoName)
-				var t []string
-				if tags != nil {
-					t = *tags
-				}
+				protocolNamesLock.Unlock()
+
 				protocolNameMapLock.Lock()
 				protocolNameMap[protoName] = &Protocol{
-					Name: *userSuppliedName,
-					Tags: t,
+					Name: protoName,
+					Tags: func() []string {
+						if tags != nil {
+							return *tags
+						}
+						return []string{}
+					}(),
 				}
 				protocolNameMapLock.Unlock()
+
 				return protoName
 			}
+			protocolNamesLock.Unlock()
 			protoName = fmt.Sprintf("%s_AS%d_v%s_%d", *s, *asn, af, i)
 			i++
 		}
