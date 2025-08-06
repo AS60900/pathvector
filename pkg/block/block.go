@@ -3,6 +3,7 @@ package block
 import (
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -70,6 +71,10 @@ func Parse(blocklist []string) ([]uint32, []string, error) {
 
 		if asn := parseASN(token); asn != -1 {
 			log.Debugf("Adding ASN to blocklist: %d", asn)
+			if asn < 0 || asn > math.MaxUint32 {
+				return nil, nil, fmt.Errorf("asn %d out of uint32 range", asn)
+			}
+
 			asns = append(asns, uint32(asn))
 		} else if validPrefix(token) {
 			log.Debugf("Adding prefix to blocklist: %s", token)
@@ -131,12 +136,13 @@ func Combine(manualBlocklist, blocklistURLs, blocklistFiles []string) []string {
 			log.Warnf("Error reading blocklist from %s: %s", url, err)
 			continue
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		out = append(out, entries...)
 	}
 
 	// Fetch blocklist files
 	for _, file := range blocklistFiles {
+		//nolint:gosec
 		f, err := os.Open(file)
 		if err != nil {
 			log.Warnf("Error opening blocklist file %s: %s", file, err)
@@ -148,7 +154,7 @@ func Combine(manualBlocklist, blocklistURLs, blocklistFiles []string) []string {
 			log.Warnf("Error reading blocklist file %s: %s", file, err)
 			continue
 		}
-		f.Close()
+		_ = f.Close()
 		out = append(out, entries...)
 	}
 

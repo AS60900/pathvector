@@ -1,6 +1,7 @@
 package peeringdb
 
 import (
+	"math"
 	"strings"
 	"testing"
 
@@ -27,6 +28,9 @@ func TestPeeringDbQuery(t *testing.T) {
 		{65530, "", "", 0, 0, true}, // Private ASN, no PeeringDB page
 	}
 	for _, tc := range testCases {
+		if tc.asn < 0 || tc.asn > math.MaxUint32 {
+			t.Errorf("asn %d out of uint32 range", tc.asn)
+		}
 		pDbData, err := NetworkInfo(uint32(tc.asn), peeringDbQueryTimeout, "", true)
 		if err != nil && !tc.shouldError {
 			t.Error(err)

@@ -310,17 +310,18 @@ func Load(configBlob []byte) (*config.Config, error) {
 				for _, community := range communities {
 					community = strings.ReplaceAll(community, ":", ",")
 					communityType := categorizeCommunity(community)
-					if communityType == "standard" {
+					switch communityType {
+					case "standard":
 						if _, ok := (*peerData.PrefixStandardCommunities)[prefix]; !ok {
 							(*peerData.PrefixStandardCommunities)[prefix] = []string{}
 						}
 						(*peerData.PrefixStandardCommunities)[prefix] = append((*peerData.PrefixStandardCommunities)[prefix], community)
-					} else if communityType == "large" {
+					case "large":
 						if _, ok := (*peerData.PrefixLargeCommunities)[prefix]; !ok {
 							(*peerData.PrefixLargeCommunities)[prefix] = []string{}
 						}
 						(*peerData.PrefixLargeCommunities)[prefix] = append((*peerData.PrefixLargeCommunities)[prefix], community)
-					} else {
+					default:
 						return nil, errors.New("Invalid prefix community: " + community)
 					}
 				}
@@ -340,11 +341,12 @@ func Load(configBlob []byte) (*config.Config, error) {
 			for community, pref := range *peerData.CommunityPrefs {
 				community = strings.ReplaceAll(community, ":", ",")
 				communityType := categorizeCommunity(community)
-				if communityType == "standard" {
+				switch communityType {
+				case "standard":
 					(*peerData.StandardCommunityPrefs)[community] = pref
-				} else if communityType == "large" {
+				case "large":
 					(*peerData.LargeCommunityPrefs)[community] = pref
-				} else {
+				default:
 					return nil, errors.New("Invalid community pref: " + community)
 				}
 			}
@@ -455,11 +457,12 @@ func Load(configBlob []byte) (*config.Config, error) {
 		}
 
 		// Validate vrrpInstance
-		if vrrpInstance.State == "primary" {
+		switch vrrpInstance.State {
+		case "primary":
 			vrrpInstance.State = "MASTER"
-		} else if vrrpInstance.State == "backup" {
+		case "backup":
 			vrrpInstance.State = "BACKUP"
-		} else {
+		default:
 			return nil, errors.New("VRRP state must be 'primary' or 'backup', unexpected " + vrrpInstance.State)
 		}
 	}
@@ -586,6 +589,7 @@ func peer(peerName string, peerData *config.Peer, c *config.Config, wg *sync.Wai
 
 	// Create peer file
 	peerFileName := path.Join(c.CacheDirectory, fmt.Sprintf("AS%d_%s.conf", *peerData.ASN, *util.Sanitize(peerName)))
+	//nolint:gosec
 	peerSpecificFile, err := os.Create(peerFileName)
 	if err != nil {
 		log.Fatalf("Create peer specific output file: %v", err)
@@ -633,6 +637,7 @@ func Run(configFilename, lockFile, version string, noConfigure, dryRun, withdraw
 
 	// Load the config file from config file
 	log.Debugf("Loading config from %s", configFilename)
+	//nolint:gosec
 	configFile, err := os.ReadFile(configFilename)
 	if err != nil {
 		log.Fatalf("Reading config file: %s", err)

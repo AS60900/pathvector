@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os/exec"
 	"strings"
 	"time"
@@ -36,6 +37,9 @@ func PrefixSet(macro string, family uint8, irrServer string, queryTimeout uint, 
 			cmdArgs = bgpqArgs + " " + cmdArgs
 		}
 		log.Debugf("Running bgpq4 %s", cmdArgs)
+		if queryTimeout > uint(math.MaxInt64/int64(time.Second)) {
+			return nil, fmt.Errorf("queryTimeout %d is too large", queryTimeout)
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(queryTimeout))
 		defer cancel()
 		//nolint:golint,gosec
@@ -68,6 +72,9 @@ func ASMembers(asSet string, irrServer string, queryTimeout uint, bgpqArgs strin
 		cmdArgs = bgpqArgs + " " + cmdArgs
 	}
 	log.Debugf("Running bgpq4 %s", cmdArgs)
+	if queryTimeout > uint(math.MaxInt64/int64(time.Second)) {
+		return nil, fmt.Errorf("query timeout %d is too large", queryTimeout)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(queryTimeout))
 	defer cancel()
 	//nolint:golint,gosec

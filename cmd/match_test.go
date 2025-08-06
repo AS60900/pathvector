@@ -42,6 +42,6 @@ func TestMatch(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	w.Close()
+	_ = w.Close()
 	os.Stdout = old
 }

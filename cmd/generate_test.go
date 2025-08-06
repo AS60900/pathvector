@@ -8,6 +8,7 @@ import (
 
 func TestGenerate(t *testing.T) {
 	// Make temporary cache directory
+	//nolint:gosec
 	if err := os.Mkdir("test-cache", 0755); err != nil && !os.IsExist(err) {
 		t.Error(err)
 	}

@@ -36,7 +36,9 @@ var birdshCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer c.Close()
+		defer func() {
+			_ = c.Close()
+		}()
 
 		bird.ReadClean(c)
 

@@ -2,6 +2,7 @@ package optimizer
 
 import (
 	"fmt"
+	"math"
 	"net"
 	"os"
 	"os/exec"
@@ -146,6 +147,9 @@ func computeMetrics(o *config.Optimizer, global *config.Config, noConfigure bool
 				),
 			)
 		}
+		if o.LatencyThreshold > uint(math.MaxInt64/int64(time.Millisecond)) {
+			log.Errorf("latency threshold %d is too large", o.LatencyThreshold)
+		}
 		if p[peer].Latency >= time.Duration(o.LatencyThreshold)*time.Millisecond {
 			alerts = append(
 				alerts,
@@ -196,6 +200,7 @@ func modifyPref(
 ) {
 	peerASN, peerName := parsePeerDelimiter(peerPair)
 	fileName := path.Join(birdDirectory, fmt.Sprintf("AS%s_%s.conf", peerASN, *util.Sanitize(peerName)))
+	//nolint:gosec
 	peerFile, err := os.ReadFile(fileName)
 	if err != nil {
 		log.Fatalf("reading peer file: %s", err)
@@ -205,6 +210,9 @@ func modifyPref(
 	if *peerData.OptimizeInbound {
 		// Calculate new local pref
 		currentLocalPref := *peerData.LocalPref
+		if currentLocalPref < 0 || currentLocalPref > math.MaxUint32 {
+			log.Fatalf("localpref %d out of uint32 range", currentLocalPref)
+		}
 		newLocalPref := uint(currentLocalPref) - localPrefModifier
 
 		lpRegex := regexp.MustCompile(`bgp_local_pref = .*; # pathvector:localpref`)

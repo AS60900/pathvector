@@ -38,6 +38,7 @@ var rootCmd = &cobra.Command{
 func loadConfig() (*config.Config, error) {
 	// Load the config file from config file
 	log.Debugf("Loading config from %s", configFile)
+	//nolint:gosec
 	configFile, err := os.ReadFile(configFile)
 	if err != nil {
 		log.Fatalf("Reading config file: %s", err)

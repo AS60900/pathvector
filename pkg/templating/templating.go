@@ -281,6 +281,7 @@ func WriteVRRPConfig(instances map[string]*config.VRRPInstance, keepalivedConfig
 	}
 
 	// Create the VRRP config file
+	//nolint:gosec
 	keepalivedFile, err := os.Create(keepalivedConfig)
 	if err != nil {
 		log.Fatalf("Create keepalived output file: %v", err)

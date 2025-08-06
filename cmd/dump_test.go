@@ -12,6 +12,7 @@ func TestDumpTable(t *testing.T) {
 	os.Stdout = w
 
 	// Make temporary cache directory
+	//nolint:gosec
 	if err := os.Mkdir("test-cache", 0755); err != nil && !os.IsExist(err) {
 		t.Error(err)
 	}
@@ -39,7 +40,7 @@ func TestDumpTable(t *testing.T) {
 		}
 	}
 
-	w.Close()
+	_ = w.Close()
 	os.Stdout = old
 }
 
@@ -49,6 +50,7 @@ func TestDumpYAML(t *testing.T) {
 	os.Stdout = w
 
 	// Make temporary cache directory
+	//nolint:gosec
 	if err := os.Mkdir("test-cache", 0755); err != nil && !os.IsExist(err) {
 		t.Error(err)
 	}
@@ -77,6 +79,6 @@ func TestDumpYAML(t *testing.T) {
 		}
 	}
 
-	w.Close()
+	_ = w.Close()
 	os.Stdout = old
 }

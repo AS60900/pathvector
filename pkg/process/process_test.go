@@ -246,7 +246,8 @@ peers:
 	}
 
 	for peerName, peerData := range globalConfig.Peers {
-		if peerName == "Upstream 1" {
+		switch peerName {
+		case "Upstream 1":
 			if *peerData.ASN != 65510 {
 				t.Errorf("peer %s expected ASN 65510 got %d", peerName, *peerData.ASN)
 			}
@@ -259,7 +260,7 @@ peers:
 			if *peerData.FilterRPKI != true {
 				t.Errorf("peer %s expected filter-rpki true got %v", peerName, *peerData.FilterIRR)
 			}
-		} else if peerName == "Upstream 2" {
+		case "Upstream 2":
 			if *peerData.ASN != 65520 {
 				t.Errorf("peer %s expected ASN 65520 got %d", peerName, *peerData.ASN)
 			}
@@ -272,7 +273,7 @@ peers:
 			if *peerData.FilterRPKI != true {
 				t.Errorf("peer %s expected filter-rpki true got %v", peerName, *peerData.FilterIRR)
 			}
-		} else if peerName == "Upstream 3" {
+		case "Upstream 3":
 			if *peerData.ASN != 65530 {
 				t.Errorf("peer %s expected ASN 65530 got %d", peerName, *peerData.ASN)
 			}
@@ -285,7 +286,7 @@ peers:
 			if *peerData.FilterRPKI != true {
 				t.Errorf("peer %s expected filter-rpki true got %v", peerName, *peerData.FilterIRR)
 			}
-		} else {
+		default:
 			t.Errorf("")
 		}
 	}

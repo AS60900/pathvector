@@ -45,6 +45,7 @@ func TestSanitize(t *testing.T) {
 
 func TestMoveFile(t *testing.T) {
 	// Make temporary cache directory
+	//nolint:gosec
 	if err := os.Mkdir("test-cache", 0755); err != nil && !os.IsExist(err) {
 		t.Error(err)
 	}
@@ -84,7 +85,7 @@ func TestPrintTable(t *testing.T) {
 	_, w, _ := os.Pipe()
 	os.Stdout = w
 	PrintTable([]string{"foo", "bar", "baz"}, [][]string{{"foo", "bar", "baz"}, {"foo", "bar", "baz"}})
-	w.Close()
+	_ = w.Close()
 	os.Stdout = old
 }
 

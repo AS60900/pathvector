@@ -15,6 +15,6 @@ func TestDocs(t *testing.T) {
 	if err := rootCmd.Execute(); err != nil {
 		t.Error(err)
 	}
-	w.Close()
+	_ = w.Close()
 	os.Stdout = old
 }

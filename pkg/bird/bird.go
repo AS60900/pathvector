@@ -32,10 +32,8 @@ func read(r io.Reader, w io.Writer) bool {
 	// Read from socket byte by byte, until reaching newline character
 	c := make([]byte, 1024)
 	pos := 0
-	for {
-		if pos >= 1024 {
-			break
-		}
+	for pos < 1024 {
+
 		_, err := r.Read(c[pos : pos+1])
 		if err != nil {
 			panic(err)
@@ -103,7 +101,9 @@ func RunCommand(command string, socket string) (string, string, error) {
 		return "", "", err
 	}
 	//noinspection GoUnhandledErrorResult
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	log.Debug("Connected to BIRD socket")
 	resp, err := Read(conn)
@@ -172,11 +172,14 @@ func Validate(binary string, cacheDir string) {
 			log.Debugf("Found error in %s:%d:%d message %s", errorFile, errorLine, errorChar, errorMessage)
 
 			// Read output file
+			//nolint:gosec
 			file, err := os.Open(path.Join(cacheDir, errorFile))
 			if err != nil {
 				log.Fatalf("unable to read BIRD output file for error parsing: %s", err)
 			}
-			defer file.Close()
+			defer func() {
+				_ = file.Close()
+			}()
 
 			scanner := bufio.NewScanner(file)
 			line := 1

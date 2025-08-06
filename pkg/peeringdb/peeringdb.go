@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"sync"
@@ -68,6 +69,9 @@ var (
 
 // networkInfo returns PeeringDB for an ASN
 func networkInfo(asn uint32, queryTimeout uint, apiKey string) (*Data, error) {
+	if queryTimeout > uint(math.MaxInt64/int64(time.Second)) {
+		return nil, fmt.Errorf("queryTimeout %d is too large", queryTimeout)
+	}
 	httpClient := http.Client{Timeout: time.Second * time.Duration(queryTimeout)}
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(Endpoint+"/net?asn=%d", asn), nil)
 
@@ -96,7 +100,9 @@ func networkInfo(asn uint32, queryTimeout uint, apiKey string) (*Data, error) {
 
 	if res.Body != nil {
 		//noinspection GoUnhandledErrorResult
-		defer res.Body.Close()
+		defer func() {
+			_ = res.Body.Close()
+		}()
 	}
 
 	body, err := io.ReadAll(res.Body)
@@ -140,6 +146,9 @@ func NetworkInfo(asn uint32, queryTimeout uint, apiKey string, useCache bool) (*
 
 // Update updates peer values from PeeringDB
 func Update(peerData *config.Peer, queryTimeout uint, apiKey string, useCache bool) {
+	if *peerData.ASN < 0 || *peerData.ASN > math.MaxUint32 {
+		log.Fatalf("ASN %d out of uint32 range", *peerData.ASN)
+	}
 	pDbData, err := NetworkInfo(uint32(*peerData.ASN), queryTimeout, apiKey, useCache)
 	if err != nil {
 		log.Fatalf("unable to get PeeringDB data: %+v", err)
@@ -171,6 +180,9 @@ func Update(peerData *config.Peer, queryTimeout uint, apiKey string, useCache bo
 
 // NeverViaRouteServers gets a list of networks that report should never be reachable via route servers
 func NeverViaRouteServers(queryTimeout uint, apiKey string) ([]uint32, error) {
+	if queryTimeout > uint(math.MaxInt64/int64(time.Second)) {
+		return nil, fmt.Errorf("queryTimeout %d is too large", queryTimeout)
+	}
 	httpClient := http.Client{Timeout: time.Second * time.Duration(queryTimeout)}
 	req, err := http.NewRequest(http.MethodGet, Endpoint+"/net?info_never_via_route_servers=1", nil)
 	if err != nil {
@@ -194,7 +206,9 @@ func NeverViaRouteServers(queryTimeout uint, apiKey string) ([]uint32, error) {
 	}
 	if res.Body != nil {
 		//noinspection GoUnhandledErrorResult
-		defer res.Body.Close()
+		defer func() {
+			_ = res.Body.Close()
+		}()
 	}
 
 	body, err := io.ReadAll(res.Body)
@@ -217,6 +231,9 @@ func NeverViaRouteServers(queryTimeout uint, apiKey string) ([]uint32, error) {
 
 // IXLANs gets PeeringDB IX LANs for an ASN
 func IXLANs(asn uint32, peeringDbQueryTimeout uint, apiKey string) ([]IxLanData, error) {
+	if peeringDbQueryTimeout > uint(math.MaxInt64/int64(time.Second)) {
+		return nil, fmt.Errorf("peeringDbQueryTimeout %d is too large", peeringDbQueryTimeout)
+	}
 	httpClient := http.Client{Timeout: time.Second * time.Duration(peeringDbQueryTimeout)}
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(Endpoint+"/netixlan?asn=%d", asn), nil)
 	if err != nil {
@@ -240,7 +257,9 @@ func IXLANs(asn uint32, peeringDbQueryTimeout uint, apiKey string) ([]IxLanData,
 	}
 	if res.Body != nil {
 		//noinspection GoUnhandledErrorResult
-		defer res.Body.Close()
+		defer func() {
+			_ = res.Body.Close()
+		}()
 	}
 
 	body, err := io.ReadAll(res.Body)

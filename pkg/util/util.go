@@ -45,26 +45,32 @@ func Sanitize(input string) *string {
 
 // MoveFile moves a file from a source to destination
 func MoveFile(source, destination string) (err error) {
+	//nolint:gosec
 	src, err := os.Open(source)
 	if err != nil {
 		return err
 	}
-	defer src.Close()
+	defer func() {
+		_ = src.Close()
+	}()
 	fi, err := src.Stat()
 	if err != nil {
 		return err
 	}
 	flag := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 	perm := fi.Mode() & os.ModePerm
+	//nolint:gosec
 	dst, err := os.OpenFile(destination, flag, perm)
 	if err != nil {
 		return err
 	}
-	defer dst.Close()
+	defer func() {
+		_ = dst.Close()
+	}()
 	_, err = io.Copy(dst, src)
 	if err != nil {
-		dst.Close()
-		os.Remove(destination)
+		_ = dst.Close()
+		_ = os.Remove(destination)
 		return err
 	}
 	err = dst.Close()
@@ -154,17 +160,23 @@ func Ptr[T any](a T) *T {
 
 // CopyFile copies a file from a source to destination
 func CopyFile(src, dst string) error {
+	//nolint:gosec
 	in, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() {
+		_ = in.Close()
+	}()
+	//nolint:gosec
 	out, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
 	_, err = io.Copy(out, in)
-	defer out.Close()
+	defer func() {
+		_ = out.Close()
+	}()
 	return err
 }
 
@@ -172,26 +184,32 @@ func CopyFile(src, dst string) error {
 func CopyFileTo(source, destinationDir string) (err error) {
 	_, destination := filepath.Split(source)
 	destination = filepath.Join(destinationDir, destination)
+	//nolint:gosec
 	src, err := os.Open(source)
 	if err != nil {
 		return err
 	}
-	defer src.Close()
+	defer func() {
+		_ = src.Close()
+	}()
 	fi, err := src.Stat()
 	if err != nil {
 		return err
 	}
 	flag := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 	perm := fi.Mode() & os.ModePerm
+	//nolint:gosec
 	dst, err := os.OpenFile(destination, flag, perm)
 	if err != nil {
 		return err
 	}
-	defer dst.Close()
+	defer func() {
+		_ = dst.Close()
+	}()
 	_, err = io.Copy(dst, src)
 	if err != nil {
-		dst.Close()
-		os.Remove(destination)
+		_ = dst.Close()
+		_ = os.Remove(destination)
 		return err
 	}
 	err = dst.Close()
