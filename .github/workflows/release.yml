@@ -1,6 +1,7 @@
 name: goreleaser
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+' # symver vmajor.minor.patch format only
@@ -16,7 +17,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.24
 
       - name: Install PDF generation dependencies
         run: |
@@ -38,5 +39,5 @@ jobs:
           version: latest
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
