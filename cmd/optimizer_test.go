@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//nolint:unused
 func _TestOptimizer(t *testing.T) {
 	args := []string{
 		"--verbose",
