@@ -11,8 +11,7 @@ import (
 )
 
 var (
-	allowCommands		[]string
-	commentMessage		string
+	commentMessage string
 )
 
 func init() {
@@ -21,17 +20,17 @@ func init() {
 }
 
 var protocolCmd = &cobra.Command{
-	Use:     "protocol <(r)estart|re(l)oad|(e)nable|(d)isable> <protocol name>",
-	Args:	 func(cmd *cobra.Command, args []string) error {
-				if len(args) < 1 {
-					log.Fatal("requires a command <restart|reload|enable|disable>")
-				} else if allowCommand(args[0]) == false {
-					log.Fatal("This command is not allowed: ", args[0])
-				} else if len(args) < 2 {
-					log.Fatal("requires protocol name")
-				}
-				return nil
-			 },
+	Use: "protocol <(r)estart|re(l)oad|(e)nable|(d)isable> <protocol name>",
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			log.Fatal("requires a command <restart|reload|enable|disable>")
+		} else if !allowCommand(args[0]) {
+			log.Fatal("This command is not allowed: ", args[0])
+		} else if len(args) < 2 {
+			log.Fatal("requires protocol name")
+		}
+		return nil
+	},
 	Aliases: []string{"p", "protocols"},
 	Short:   "Protocol command (restart, reload, enable or disable protocol sessions)",
 	Long:    "With this command you can restart, reload, enable or disable a protocol, if you want you can use \"all\" as the protocol name to for example restart all protocol sessions.",
@@ -69,18 +68,14 @@ func allowCommand(cmd string) bool {
 // runCMD generate the run command
 func runCMD(args []string, message string) string {
 	switch args[0] {
-		case "d":
-			args[0] = "disable"
-			break
-		case "e":
-			args[0] = "enable"
-			break
-		case "r":
-			args[0] = "restart"
-			break
-		case "l":
-			args[0] = "reload"
-			break
+	case "d":
+		args[0] = "disable"
+	case "e":
+		args[0] = "enable"
+	case "r":
+		args[0] = "restart"
+	case "l":
+		args[0] = "reload"
 	}
 
 	if args[0] == "disable" && message != "" {
@@ -88,7 +83,7 @@ func runCMD(args []string, message string) string {
 	} else if args[0] == "enable" && message != "" {
 		return args[0] + " " + args[1] + " \"" + message + "\""
 	} else if args[0] == "disable" {
-	 	return args[0] + " " + args[1] + " \"Protocol manually " + args[0] + "d by pathvector\""
+		return args[0] + " " + args[1] + " \"Protocol manually " + args[0] + "d by pathvector\""
 	}
 
 	return args[0] + " " + args[1]
