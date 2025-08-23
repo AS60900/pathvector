@@ -214,14 +214,15 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $af $peer.ASN $p
             if (net ~ [
             {{ $first := true }}
             {{ range $prefix := $peer.DontAnnounce }}
-            {{ if or (and (eq $af 4) (contains "." $prefix)) (and (eq $af 6) (contains ":" $prefix)) }}
+            {{ if or (and (eq $af "4") (Contains $prefix ".")) (and (eq $af "6") (Contains $prefix ":")) }}
                 {{ if not $first }},{{ end }}
                 {{ $first = false }}
-                {{ printf "%s" $prefix }}
+                {{ $prefix }}
             {{ end }}
             {{ end }}
             ]) then _reject("prefix in dont-announce list");
             {{ end }}
+
 
 
             {{ range $prefix, $communities := StrSliceMapDeref $peer.PrefixStandardCommunities }}
