@@ -81,6 +81,7 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $af $peer.ASN $p
     {{ if IntDeref $peer.DefaultLocalPref }}default bgp_local_pref {{ IntDeref $peer.DefaultLocalPref }};{{ end }}
     {{ if BoolDeref $peer.AdvertiseHostname }}advertise hostname on;{{ end }}
     {{ if IntDeref $peer.DefaultBGPMED }}default bgp_med {{ IntDeref $peer.DefaultBGPMED }};{{ end }}
+    {{ if BoolDeref $peer.ExtendedNextHop }}enable extended messages on;{{ end }}
     {{ StrDeref $peer.SessionGlobal }}
     {{ $protocols := MakeSlice }}
     {{ if BoolDeref $peer.MPUnicast46 }}
@@ -106,6 +107,7 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $af $peer.ASN $p
         {{ if BoolDeref $peer.NextHopSelfIBGP }}next hop self ibgp;{{ end }}
         {{ if BoolDeref $peer.AddPathTx }}add paths tx;{{ end }}
         {{ if BoolDeref $peer.AddPathRx }}add paths rx;{{ end }}
+        {{ if BoolDeref $peer.ExtendedNextHop }}extended next hop on;{{ end }}
         {{ if BoolDeref $peer.DisableAfterError }}disable after error on;{{ end }}
         import filter {
             {{ if $global.NoAccept }}reject; # no-accept: true{{ end }}
@@ -210,9 +212,17 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $af $peer.ASN $p
 
             {{ if not (Empty $peer.DontAnnounce) }}
             if (net ~ [
-            {{ BirdSet $peer.DontAnnounce }}
+            {{ $first := true }}
+            {{ range $prefix := $peer.DontAnnounce }}
+            {{ if or (and (eq $af 4) (contains "." $prefix)) (and (eq $af 6) (contains ":" $prefix)) }}
+                {{ if not $first }},{{ end }}
+                {{ $first = false }}
+                {{ printf "%s" $prefix }}
+            {{ end }}
+            {{ end }}
             ]) then _reject("prefix in dont-announce list");
             {{ end }}
+
 
             {{ range $prefix, $communities := StrSliceMapDeref $peer.PrefixStandardCommunities }}
             if (net = {{ $prefix }}) then {
