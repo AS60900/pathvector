@@ -287,7 +287,6 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $af $peer.ASN $p
             {{ end }}
             ]) then _reject("prefix in only-announce list");
             {{ end }}
-            {{ end }}
 
             {{ if BoolDeref $peer.AnnounceOriginated }}
             accept_local();
