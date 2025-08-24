@@ -276,9 +276,17 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $af $peer.ASN $p
             {{ end }}
 
             {{ if not (Empty $peer.OnlyAnnounce) }}
-            if !(net ~ [
-            {{ BirdSet $peer.OnlyAnnounce }}
-            ]) then _reject("prefix not in only-announce list");
+            if (net ~ [
+            {{ $first := true }}
+            {{ range $prefix := $peer.OnlyAnnounce }}
+            {{ if or (and (eq $af "4") (Contains $prefix ".")) (and (eq $af "6") (Contains $prefix ":")) }}
+                {{ if not $first }},{{ end }}
+                {{ $first = false }}
+                {{ $prefix }}
+            {{ end }}
+            {{ end }}
+            ]) then _reject("prefix in only-announce list");
+            {{ end }}
             {{ end }}
 
             {{ if BoolDeref $peer.AnnounceOriginated }}
