@@ -56,8 +56,10 @@ define AS{{ $peer.ASN }}_{{ $peer.ProtocolName }}_AS_SET_MEMBERS = [
 
 {{ range $i, $neighbor := $peer.NeighborIPs }}
 {{ $af := "4" }}{{ if Contains $neighbor ":" }}{{ $af = "6" }}{{ end }}
+{{ $NameAF := $af }}
+{{ if BoolDeref $peer.MPUnicast46 }}{{ $NameAF = "46" }}{{ end }}
 {{ $neighborNoIface := SplitFirst $neighbor "%" }}
-protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $af $peer.ASN $peer.Tags }} {
+protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $NameAF $peer.ASN $peer.Tags }} {
     local{{ if eq $af "4" }}{{ if $peer.Listen4 }} {{ $peer.Listen4 }}{{ end }}{{ else }}{{ if $peer.Listen6 }} {{ $peer.Listen6 }}{{ end }}{{ end }} as {{ if IntDeref $peer.LocalASN }}{{ IntDeref $peer.LocalASN }}{{ else }}ASN{{ end }}{{ if $peer.LocalPort }} port {{ $peer.LocalPort }}{{ end }};
     {{ if StrDeref $peer.Interface }}interface "{{ StrDeref $peer.Interface }}";{{ end }}
     neighbor {{ $neighbor }} as {{ $peer.ASN }}{{ if $peer.NeighborPort }} port {{ $peer.NeighborPort }}{{ end }};
@@ -276,7 +278,7 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $af $peer.ASN $p
             {{ end }}
 
             {{ if not (Empty $peer.OnlyAnnounce) }}
-            if (net ~ [
+            if !(net ~ [
             {{ $first := true }}
             {{ range $prefix := $peer.OnlyAnnounce }}
             {{ if or (and (eq $af "4") (Contains $prefix ".")) (and (eq $af "6") (Contains $prefix ":")) }}

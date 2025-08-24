@@ -196,6 +196,9 @@ var funcMap = template.FuncMap{
 	// UniqueProtocolName takes a protocol-safe string and address family and returns a unique protocol name
 	"UniqueProtocolName": func(s, userSuppliedName *string, af string, asn *int, tags *[]string) string {
 		protoName := fmt.Sprintf("%s_AS%d_v%s", *s, *asn, af)
+		if af == "46" {
+			protoName = fmt.Sprintf("%s_AS%d", *s, *asn)
+		}
 		i := 1
 		for {
 			protocolNamesLock.Lock()
