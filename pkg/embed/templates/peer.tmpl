@@ -212,6 +212,7 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $NameAF $peer.AS
             {{ if $global.NoAnnounce }}reject; # no-announce: true{{ end }}
             {{ if (not (BoolDeref $peer.Export)) }}reject; # export: false{{ end }}
 
+            {{ if not (Empty $peer.DontAnnounce) }}
             {{ $hasMatchingPrefixes := false }}
             {{ range $prefix := $peer.DontAnnounce }}
             {{ if or (and (eq $af "4") (Contains $prefix ".")) (and (eq $af "6") (Contains $prefix ":")) }}
@@ -229,6 +230,7 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $NameAF $peer.AS
             {{ end }}
             {{ end }}
             ]) then _reject("prefix in dont-announce list");
+            {{ end }}
             {{ end }}
 
             {{ range $prefix, $communities := StrSliceMapDeref $peer.PrefixStandardCommunities }}
@@ -281,6 +283,7 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $NameAF $peer.AS
             set_blackhole();
             {{ end }}
 
+            {{ if not (Empty $peer.OnlyAnnounce) }}
             {{ $hasMatchingPrefixes := false }}
             {{ range $prefix := $peer.OnlyAnnounce }}
             {{ if or (and (eq $af "4") (Contains $prefix ".")) (and (eq $af "6") (Contains $prefix ":")) }}
@@ -298,6 +301,7 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $NameAF $peer.AS
             {{ end }}
             {{ end }}
             ]) then _reject("prefix not in only-announce list");
+            {{ end }}
             {{ end }}
 
             {{ if BoolDeref $peer.AnnounceOriginated }}
