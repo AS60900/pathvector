@@ -212,19 +212,21 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $NameAF $peer.AS
             {{ if $global.NoAnnounce }}reject; # no-announce: true{{ end }}
             {{ if (not (BoolDeref $peer.Export)) }}reject; # export: false{{ end }}
 
-            {{ $dontAnnounceAF := MakeSlice }}
+            {{ $hasMatchingPrefixes := false }}
             {{ range $prefix := $peer.DontAnnounce }}
             {{ if or (and (eq $af "4") (Contains $prefix ".")) (and (eq $af "6") (Contains $prefix ":")) }}
-            {{ $dontAnnounceAF = Append $dontAnnounceAF $prefix }}
+            {{ $hasMatchingPrefixes = true }}
             {{ end }}
             {{ end }}
-            {{ if not (Empty $dontAnnounceAF) }}
+            {{ if $hasMatchingPrefixes }}
             if (net ~ [
             {{ $first := true }}
-            {{ range $prefix := $dontAnnounceAF }}
+            {{ range $prefix := $peer.DontAnnounce }}
+            {{ if or (and (eq $af "4") (Contains $prefix ".")) (and (eq $af "6") (Contains $prefix ":")) }}
                 {{ if not $first }},{{ end }}
                 {{ $first = false }}
                 {{ $prefix }}
+            {{ end }}
             {{ end }}
             ]) then _reject("prefix in dont-announce list");
             {{ end }}
@@ -279,19 +281,21 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $NameAF $peer.AS
             set_blackhole();
             {{ end }}
 
-            {{ $onlyAnnounceAF := MakeSlice }}
+            {{ $hasMatchingPrefixes := false }}
             {{ range $prefix := $peer.OnlyAnnounce }}
             {{ if or (and (eq $af "4") (Contains $prefix ".")) (and (eq $af "6") (Contains $prefix ":")) }}
-            {{ $onlyAnnounceAF = Append $onlyAnnounceAF $prefix }}
+            {{ $hasMatchingPrefixes = true }}
             {{ end }}
             {{ end }}
-            {{ if not (Empty $onlyAnnounceAF) }}
+            {{ if $hasMatchingPrefixes }}
             if !(net ~ [
             {{ $first := true }}
-            {{ range $prefix := $onlyAnnounceAF }}
+            {{ range $prefix := $peer.OnlyAnnounce }}
+            {{ if or (and (eq $af "4") (Contains $prefix ".")) (and (eq $af "6") (Contains $prefix ":")) }}
                 {{ if not $first }},{{ end }}
                 {{ $first = false }}
                 {{ $prefix }}
+            {{ end }}
             {{ end }}
             ]) then _reject("prefix not in only-announce list");
             {{ end }}
