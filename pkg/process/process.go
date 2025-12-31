@@ -216,6 +216,44 @@ func Load(configBlob []byte) (*config.Config, error) {
 						if templateHasValueConfigured && !peerHasValueConfigured {
 							// Use the template's value
 							peerFieldValue.Set(templateValue.Field(i))
+						} else if templateHasValueConfigured && peerHasValueConfigured {
+							// Check struct tag `overwritable:"false"` on the template field
+							tagVal := templateValueType.Field(i).Tag.Get("appendable")
+							doAppend := false
+							if tagVal == "true" {
+								doAppend = true
+							}
+
+							if doAppend {
+								// Determine kind of underlying element (slice/map)
+								kind := templateValueType.Field(i).Type.Elem().Kind()
+								switch kind {
+								case reflect.Slice:
+									// Combine template slice + peer slice
+									tSlice := tValue.Elem()
+									pSlice := pVal
+									combined := reflect.AppendSlice(tSlice, pSlice)
+									newPtr := reflect.New(tSlice.Type())
+									newPtr.Elem().Set(combined)
+									peerFieldValue.Set(newPtr)
+								case reflect.Map:
+									// Merge template map entries then peer map entries
+									tMap := tValue.Elem()
+									pMap := pVal
+									newMap := reflect.MakeMap(tMap.Type())
+									for _, k := range tMap.MapKeys() {
+										newMap.SetMapIndex(k, tMap.MapIndex(k))
+									}
+									for _, k := range pMap.MapKeys() {
+										newMap.SetMapIndex(k, pMap.MapIndex(k))
+									}
+									newPtr := reflect.New(tMap.Type())
+									newPtr.Elem().Set(newMap)
+									peerFieldValue.Set(newPtr)
+								default:
+									// Not a slice or map, leave peer value as-is (peer overrides)
+								}
+							}
 						}
 
 						log.Tracef("[%s] field: %s template's value: %+v kind: %T templateHasValueConfigured: %v", peerName, fieldName, reflect.Indirect(tValue), tValue.Kind().String(), templateHasValueConfigured)
