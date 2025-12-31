@@ -269,6 +269,13 @@ var funcMap = template.FuncMap{
 		}
 		return out + "]"
 	},
+	"IterateUint32": func(count uint32) []int {
+		out := make([]int, count)
+		for i := range out {
+			out[i] = i
+		}
+		return out
+	},
 }
 
 // Templates

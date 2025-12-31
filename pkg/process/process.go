@@ -296,6 +296,61 @@ func Load(configBlob []byte) (*config.Config, error) {
 			log.Fatalf("[%s] only-announce and announce-all cannot both be true", peerName)
 		}
 
+		if peerData.PrependCommunities != nil {
+			log.Debugf("Peer %s: PrependCommunities: %v", peerName, peerData.PrependCommunities)
+			if peerData.PrependStandardCommunities == nil {
+				peerData.PrependStandardCommunities = &map[string]uint32{}
+			}
+
+			if peerData.PrependLargeCommunities == nil {
+				peerData.PrependLargeCommunities = &map[string]uint32{}
+			}
+
+			for community, prepend := range *peerData.PrependCommunities {
+				community = templateReplacements(strings.ReplaceAll(community, ":", ","), peerData)
+				communityType := categorizeCommunity(community)
+
+				switch communityType {
+				case "standard":
+					if _, ok := (*peerData.PrependStandardCommunities)[community]; !ok {
+						(*peerData.PrependStandardCommunities)[community] = prepend
+					} else {
+						(*peerData.PrependStandardCommunities)[community] += prepend
+					}
+				case "large":
+					if _, ok := (*peerData.PrependLargeCommunities)[community]; !ok {
+						(*peerData.PrependLargeCommunities)[community] = prepend
+					} else {
+						(*peerData.PrependLargeCommunities)[community] += prepend
+					}
+					log.Debugf("Large community prepend set: %v", *peerData.PrependLargeCommunities)
+				}
+			}
+		}
+
+		if peerData.DontAnnounceCommunities != nil {
+			log.Debugf("Peer %s: DontAnnounceCommunities: %v", peerName, peerData.DontAnnounceCommunities)
+			if peerData.DontAnnounceStandardCommunities == nil {
+				peerData.DontAnnounceStandardCommunities = &[]string{}
+			}
+
+			if peerData.DontAnnounceLargeCommunities == nil {
+				peerData.DontAnnounceLargeCommunities = &[]string{}
+			}
+
+			for _, community := range *peerData.DontAnnounceCommunities {
+				community = templateReplacements(strings.ReplaceAll(community, ":", ","), peerData)
+				log.Debugf("Processing dont-announce community %s for peer %s", community, peerName)
+				communityType := categorizeCommunity(community)
+				switch communityType {
+				case "standard":
+					*peerData.DontAnnounceStandardCommunities = append(*peerData.DontAnnounceStandardCommunities, community)
+				case "large":
+					*peerData.DontAnnounceLargeCommunities = append(*peerData.DontAnnounceLargeCommunities, community)
+				}
+			}
+		}
+
 		// Categorize prefix-communities
 		if peerData.PrefixCommunities != nil {
 			// Initialize community maps
@@ -553,6 +608,10 @@ func Load(configBlob []byte) (*config.Config, error) {
 		}
 
 		pipe.StandardCommunities, pipe.LargeCommunities, err = sortCommunitiesPtr(pipe.CommunitiesFilter)
+
+		if err != nil {
+			return nil, fmt.Errorf("invalid pipe community: %v", err)
+		}
 	}
 
 	// Blocklist

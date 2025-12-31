@@ -159,6 +159,13 @@ type Peer struct {
 	StandardCommunityPrefs *map[string]uint32 `yaml:"-" description:"-" default:"-"`
 	LargeCommunityPrefs    *map[string]uint32 `yaml:"-" description:"-" default:"-"`
 
+	PrependCommunities              *map[string]uint32 `yaml:"prepend-communities" description:"List of standard communities used to define the amount of times to prepend the local AS to routes sent to the peer" default:"-"`
+	PrependStandardCommunities      *map[string]uint32 `yaml:"-" description:"-" default:"-"`
+	PrependLargeCommunities         *map[string]uint32 `yaml:"-" description:"-" default:"-"`
+	DontAnnounceCommunities         *[]string          `yaml:"dont-announce-communities" description:"List of standard communities used to not announce certain routes to this peer" default:"-"`
+	DontAnnounceStandardCommunities *[]string          `yaml:"-" description:"-" default:"-"`
+	DontAnnounceLargeCommunities    *[]string          `yaml:"-" description:"-" default:"-"`
+
 	// Filtering
 	ASSet *string `yaml:"as-set" description:"Peer's as-set for filtering" default:"-"`
 

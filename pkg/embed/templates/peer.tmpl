@@ -265,6 +265,34 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $NameAF $peer.AS
             bgp_large_community.add(({{ $community }}));
             {{ end }}
 
+            {{ range $community, $prepends := StringUint32MapDeref $peer.PrependStandardCommunities }}
+            if (({{ $community }}) ~ bgp_community) then {
+                {{ range $i := IterateUint32 $prepends }}
+                bgp_path.prepend(ASN);
+                {{ end }}
+            }
+            {{ end }}
+
+            {{ range $community, $prepends := StringUint32MapDeref $peer.PrependLargeCommunities }}
+            if (({{ $community }}) ~ bgp_large_community) then {
+                {{ range $i := IterateUint32 $prepends }}
+                bgp_path.prepend(ASN);
+                {{ end }}
+            }
+            {{ end }}
+
+            {{ range $i, $community := StringSliceIter $peer.DontAnnounceStandardCommunities }}
+            if (({{ $community }}) ~ bgp_community) then {
+                reject;
+            }
+            {{ end }}
+
+            {{ range $i, $community := StringSliceIter $peer.DontAnnounceLargeCommunities }}
+            if (({{ $community }}) ~ bgp_large_community) then {
+                reject;
+            }
+            {{ end }}
+
             {{ if BoolDeref $peer.RemovePrivateASNs }}
             remove_private_asns();
             {{ end }}
