@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,16 +14,20 @@ import (
 func TestBirdConn(t *testing.T) {
 	unixSocket := "test.sock"
 
-	// Delete socket
 	t.Log("Removing existing socket")
 	_ = os.Remove(unixSocket)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	go func() {
-		time.Sleep(time.Millisecond * 10) // Wait for the server to start
+		defer wg.Done()
+
+		time.Sleep(10 * time.Millisecond)
 		resp, _, err := RunCommand("bird command test\n", unixSocket)
+
 		assert.Nil(t, err)
 
-		// Print bird output as multiple lines
 		for _, line := range strings.Split(strings.Trim(resp, "\n"), "\n") {
 			t.Logf("BIRD response (multiline): %s", line)
 		}
@@ -31,29 +36,25 @@ func TestBirdConn(t *testing.T) {
 	t.Log("Starting fake BIRD socket server")
 	l, err := net.Listen("unix", unixSocket)
 	assert.Nil(t, err)
+	defer l.Close()
 
-	defer func() {
-    _ = l.Close()
-  }()
 	t.Logf("Accepting connection on %s", unixSocket)
 	conn, err := l.Accept()
-	if err != nil {
-		return
-	}
-	defer func() {
-		_ = conn.Close()
-	}()
+	assert.Nil(t, err)
+	defer conn.Close()
 
 	_, err = conn.Write([]byte("0001 Fake BIRD response 1\n"))
 	assert.Nil(t, err)
 
 	buf := make([]byte, 1024)
-	n, err := conn.Read(buf[:])
+	n, err := conn.Read(buf)
 	assert.Nil(t, err)
 	assert.Equal(t, "bird command test\n", string(buf[:n]))
 
 	_, err = conn.Write([]byte("0001 Fake BIRD response 2\n"))
 	assert.Nil(t, err)
+
+	wg.Wait()
 }
 
 func TestBirdProtocolParseOne(t *testing.T) {
