@@ -278,6 +278,16 @@ type MRTInstance struct {
 	Table    *string `yaml:"table" description:"Routing table to read from" default:"-"`
 }
 
+// PipeInstance stores a single Pipe instance
+type PipeInstance struct {
+	FromTable           string    `yaml:"from" description:"Table to read from" validate:"required"`
+	ToTable             string    `yaml:"to" description:"Table to write to" validate:"required"`
+	AFType              string    `yaml:"afi" description:"Protocol to use for the pipe (ipv4/ipv6)" default:"ipv4"`
+	CommunitiesFilter   *[]string `yaml:"communities" description:"List of communities to filter" default:""`
+	StandardCommunities *[]string `yaml:"-" description:"-"`
+	LargeCommunities    *[]string `yaml:"-" description:"-"`
+}
+
 // Kernel stores options that relate to the OS kernel
 type Kernel struct {
 	Accept4         []string          `yaml:"accept4" description:"List of BIRD protocols to import into the IPv4 table"`
@@ -384,6 +394,8 @@ type Config struct {
 
 	AuthorizedProviders map[uint32][]uint32 `yaml:"authorized-providers" description:"Map of origin ASN to authorized provider ASN list" default:"-"`
 
+	Pipes map[string]*PipeInstance `yaml:"pipes" description:"List of Pipe instances (See BIRD documentation)"`
+
 	Peers         map[string]*Peer         `yaml:"peers" description:"BGP peer configuration"`
 	Templates     map[string]*Peer         `yaml:"templates" description:"BGP peer templates"`
 	VRRPInstances map[string]*VRRPInstance `yaml:"vrrp" description:"List of VRRP instances"`
@@ -419,6 +431,7 @@ func (c *Config) Init() {
 	c.Kernel = &Kernel{}
 	c.Optimizer = &Optimizer{}
 	c.Plugins = map[string]string{}
+	c.Pipes = map[string]*PipeInstance{}
 
 	if c.TransitASNs == nil {
 		c.TransitASNs = defaultTransitASNs

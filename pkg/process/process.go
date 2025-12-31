@@ -531,6 +531,30 @@ func Load(configBlob []byte) (*config.Config, error) {
 		}
 	} // end peer loop
 
+	for pipeName, pipe := range c.Pipes {
+		if pipe.FromTable == "" || strings.TrimSpace(pipe.FromTable) == "" {
+			log.Fatalf("Pipe %s from is required", pipeName)
+		}
+
+		if pipe.ToTable == "" || strings.TrimSpace(pipe.ToTable) == "" {
+			log.Fatalf("Pipe %s to is required", pipeName)
+		}
+
+		if pipe.FromTable == pipe.ToTable {
+			log.Fatalf("Pipe %s from and to tables must be different", pipeName)
+		}
+
+		if pipe.AFType == "" || strings.TrimSpace(pipe.AFType) == "" {
+			pipe.AFType = "ipv4"
+		}
+
+		if pipe.AFType != "ipv4" && pipe.AFType != "ipv6" {
+			log.Fatalf("Pipe %s AFType must be ipv4 or ipv6", pipeName)
+		}
+
+		pipe.StandardCommunities, pipe.LargeCommunities, err = sortCommunitiesPtr(pipe.CommunitiesFilter)
+	}
+
 	// Blocklist
 	blocklist := block.Combine(c.Blocklist, c.BlocklistURLs, c.BlocklistFiles)
 	bASNs, bPrefixes, err := block.Parse(blocklist)
@@ -547,6 +571,40 @@ func Load(configBlob []byte) (*config.Config, error) {
 	}
 
 	return &c, nil // nil error
+}
+
+// pipe processes a single pipe
+func pipe(pipeName string, pipeData *config.PipeInstance, c *config.Config, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	log.Debugf("Processing Pipe%s %s", pipeData.ToTable, pipeName)
+
+	util.PrintStructInfo(pipeName, pipeData)
+
+	// Create peer file
+	pipeFileName := path.Join(c.CacheDirectory, fmt.Sprintf("PIPE_%s.conf", *util.Sanitize(pipeName)))
+	pipeSpecificFile, err := os.Create(pipeFileName)
+	if err != nil {
+		log.Fatalf("Create peer specific output file: %v", err)
+	}
+
+	// Render the template and write to buffer
+	var b bytes.Buffer
+	log.Debugf("[%s] Writing config", pipeName)
+	if err := templating.Template.ExecuteTemplate(&b, "pipe.tmpl", &templating.PipeWrapper{
+		Name:   pipeName,
+		Pipe:   *pipeData,
+		Config: *c,
+	}); err != nil {
+		log.Fatalf("Execute template: %v", err)
+	}
+
+	// Reformat config and write template to file
+	if _, err := pipeSpecificFile.Write([]byte(bird.Reformat(b.String()))); err != nil {
+		log.Fatalf("Write template to file: %v", err)
+	}
+
+	log.Debugf("[%s] Wrote config", pipeName)
 }
 
 // peer processes a single peer
@@ -716,6 +774,14 @@ func Run(configFilename, lockFile, version string, noConfigure, dryRun, withdraw
 		wg.Add(1)
 		go peer(peerName, peerData, c, wg)
 	} // end peer loop
+	wg.Wait()
+
+	// Iterate over pipes
+	log.Debug("Processing pipes")
+	for pipeName, pipeData := range c.Pipes {
+		wg.Add(1)
+		go pipe(pipeName, pipeData, c, wg)
+	}
 	wg.Wait()
 
 	// Run BIRD config validation

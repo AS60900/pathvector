@@ -31,6 +31,12 @@ type Wrapper struct {
 	Config config.Config
 }
 
+type PipeWrapper struct {
+	Name   string
+	Pipe   config.PipeInstance
+	Config config.Config
+}
+
 type Protocol struct {
 	Name string
 	Tags []string
