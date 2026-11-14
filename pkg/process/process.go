@@ -115,7 +115,7 @@ func sortCommunitiesPtr(communities *[]string) (*[]string, *[]string, error) {
 
 func templateReplacements(in string, peer *config.Peer) string {
 	v := reflect.ValueOf(peer)
-	for v.Kind() == reflect.Ptr { // Dereference pointer types
+	for v.Kind() == reflect.Pointer { // Dereference pointer types
 		v = v.Elem()
 	}
 	vType := v.Type()
@@ -781,7 +781,7 @@ func Run(configFilename, lockFile, version string, noConfigure, dryRun, withdraw
 		} else if os.IsNotExist(err) {
 			// If the lockfile doesn't exist, create it
 			log.Debug("Lockfile doesn't exist, creating one")
-			//nolint:golint,gosec
+			//nolint:gosec
 			if err := os.WriteFile(lockFile, []byte(""), 0644); err != nil {
 				log.Fatalf("Writing lockfile: %v", err)
 			}
@@ -902,7 +902,7 @@ func Run(configFilename, lockFile, version string, noConfigure, dryRun, withdraw
 		}
 		file := path.Join(c.BIRDDirectory, "protocols.json")
 		log.Debugf("Writing protocol names to %s", file)
-		//nolint:golint,gosec
+		//nolint:gosec
 		if err := os.WriteFile(file, j, 0644); err != nil {
 			log.Fatalf("Writing protocol names: %v", err)
 		}

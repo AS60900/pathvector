@@ -42,7 +42,7 @@ func PrefixSet(macro string, family uint8, irrServer string, queryTimeout uint, 
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(queryTimeout))
 		defer cancel()
-		//nolint:golint,gosec
+		//nolint:gosec
 		cmd := exec.CommandContext(ctx, "bgpq4", strings.Split(cmdArgs, " ")...)
 		stdout, err := cmd.Output()
 		if err != nil {
@@ -77,7 +77,7 @@ func ASMembers(asSet string, irrServer string, queryTimeout uint, bgpqArgs strin
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(queryTimeout))
 	defer cancel()
-	//nolint:golint,gosec
+	//nolint:gosec
 	cmd := exec.CommandContext(ctx, "bgpq4", strings.Split(cmdArgs, " ")...)
 	stdout, err := cmd.Output()
 	if err != nil {

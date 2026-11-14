@@ -52,7 +52,7 @@ func TestMoveFile(t *testing.T) {
 
 	inputString := "Test File"
 
-	//nolint:golint,gosec
+	//nolint:gosec
 	if err := os.WriteFile("test-cache/source.txt", []byte(inputString), 0644); err != nil {
 		t.Error(err)
 	}

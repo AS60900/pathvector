@@ -46,7 +46,7 @@ func documentConfigTypes(t reflect.Type, output bool) {
 		fmt.Println("## " + sanitizeConfigName(t.String()))
 	}
 	// Handle pointer types
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	for i := 0; i < t.NumField(); i++ {

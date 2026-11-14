@@ -164,7 +164,7 @@ func computeMetrics(o *config.Optimizer, global *config.Config, noConfigure bool
 			for _, alert := range alerts {
 				log.Debugf("[Optimizer] %s", alert)
 				if o.AlertScript != "" {
-					//nolint:golint,gosec
+					//nolint:gosec
 					birdCmd := exec.Command(o.AlertScript, alert)
 					birdCmd.Stdout = os.Stdout
 					birdCmd.Stderr = os.Stderr
@@ -218,7 +218,7 @@ func modifyPref(
 		lpRegex := regexp.MustCompile(`bgp_local_pref = .*; # pathvector:localpref`)
 		modified := lpRegex.ReplaceAllString(string(peerFile), fmt.Sprintf("bgp_local_pref = %d; # pathvector:localpref", newLocalPref))
 
-		//nolint:golint,gosec
+		//nolint:gosec
 		if err := os.WriteFile(fileName, []byte(modified), 0644); err != nil {
 			log.Fatal(err)
 		} else {

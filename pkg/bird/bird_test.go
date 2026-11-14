@@ -36,12 +36,16 @@ func TestBirdConn(t *testing.T) {
 	t.Log("Starting fake BIRD socket server")
 	l, err := net.Listen("unix", unixSocket)
 	assert.Nil(t, err)
-	defer l.Close()
+	defer func() {
+		assert.NoError(t, l.Close())
+	}()
 
 	t.Logf("Accepting connection on %s", unixSocket)
 	conn, err := l.Accept()
 	assert.Nil(t, err)
-	defer conn.Close()
+	defer func() {
+		assert.NoError(t, conn.Close())
+	}()
 
 	_, err = conn.Write([]byte("0001 Fake BIRD response 1\n"))
 	assert.Nil(t, err)

@@ -50,7 +50,7 @@ func completeType(c any, node *nestedMapContainer, target string) {
 
 	v := reflect.ValueOf(c)
 	log.Tracef("Attempting to complete type %s", v.Type())
-	for v.Kind() == reflect.Ptr { // Dereference pointer types
+	for v.Kind() == reflect.Pointer { // Dereference pointer types
 		v = v.Elem()
 	}
 	if target != "" {
@@ -92,7 +92,7 @@ func getConfigValue(c any, namespace []string) (interface{}, error) {
 	}
 
 	v := reflect.ValueOf(c)
-	for v.Kind() == reflect.Ptr { // Dereference pointer types
+	for v.Kind() == reflect.Pointer { // Dereference pointer types
 		v = v.Elem()
 	}
 
@@ -130,7 +130,7 @@ func setConfigValue(c any, namespace []string, targetValue string) {
 	log.Debugf("Attempting to set '%s' to '%s'", namespaceStr, targetValue)
 
 	v := reflect.ValueOf(c)
-	for v.Kind() == reflect.Ptr { // Dereference pointer types
+	for v.Kind() == reflect.Pointer { // Dereference pointer types
 		v = v.Elem()
 	}
 
@@ -150,13 +150,13 @@ func setConfigValue(c any, namespace []string, targetValue string) {
 	log.Debugf("Iterating over type %s", vType)
 	for i := 0; i < v.NumField(); i++ {
 		f := v.Field(i)
-		if f.Kind() == reflect.Ptr {
+		if f.Kind() == reflect.Pointer {
 			if f.IsNil() {
 				f.Set(reflect.New(f.Type().Elem()))
 			}
 			f = f.Elem()
 		}
-		for f.Kind() == reflect.Ptr { // Dereference pointer types
+		for f.Kind() == reflect.Pointer { // Dereference pointer types
 			f = f.Elem()
 		}
 		key := vType.Field(i).Tag.Get("yaml")
@@ -191,11 +191,12 @@ func setConfigValue(c any, namespace []string, targetValue string) {
 						targetValAsString := fmt.Sprintf("%v", targetValue)
 						f.SetString(targetValAsString)
 					case reflect.Bool:
-						if targetValue == "true" {
+						switch targetValue {
+						case "true":
 							f.SetBool(true)
-						} else if targetValue == "false" {
+						case "false":
 							f.SetBool(false)
-						} else {
+						default:
 							fmt.Printf("%% Unable parse value '%s' as bool", targetValue)
 							return
 						}
@@ -241,7 +242,7 @@ func createMapEntry(c any, namespace []string, targetKey string) {
 	log.Debugf("Attempting to create map entry '%s'", namespaceStr)
 
 	v := reflect.ValueOf(c)
-	for v.Kind() == reflect.Ptr { // Dereference pointer types
+	for v.Kind() == reflect.Pointer { // Dereference pointer types
 		v = v.Elem()
 	}
 
@@ -261,7 +262,7 @@ func createMapEntry(c any, namespace []string, targetKey string) {
 	log.Debugf("Iterating over type %s", vType)
 	for i := 0; i < v.NumField(); i++ {
 		f := v.Field(i)
-		for f.Kind() == reflect.Ptr { // Dereference pointer types
+		for f.Kind() == reflect.Pointer { // Dereference pointer types
 			f = f.Elem()
 		}
 		key := vType.Field(i).Tag.Get("yaml")
@@ -277,7 +278,7 @@ func createMapEntry(c any, namespace []string, targetKey string) {
 				log.Debugf("Matched. Creating '%s' with type %s target key %s", namespaceStr, mapKeyType, targetKey)
 				if f.IsValid() && f.CanSet() {
 					zeroValue := reflect.Zero(mapKeyType).Interface()
-					if mapKeyType.Kind() == reflect.Ptr {
+					if mapKeyType.Kind() == reflect.Pointer {
 						zeroValue = reflect.New(mapKeyType.Elem()).Interface()
 					}
 					f.SetMapIndex(reflect.ValueOf(targetKey), reflect.ValueOf(zeroValue))
@@ -427,7 +428,9 @@ func initRline() {
 func confirm(prompt string) bool {
 	fmt.Printf("%s [y/N] ", prompt)
 	var response string
-	fmt.Scanln(&response)
+	if _, err := fmt.Scanln(&response); err != nil {
+		return false
+	}
 	return util.Contains([]string{"y", "Y", "yes", "Yes", "YES"}, response)
 }
 
@@ -529,7 +532,7 @@ func runCommand(line string) {
 			fmt.Printf("%% Unable to marshal config as YAML: %s", err)
 			return
 		}
-		//nolint:golint,gosec
+		//nolint:gosec
 		if err := os.WriteFile(configFile, yamlBytes, 0755); err != nil {
 			fmt.Printf("%% Unable write config file: %s", err)
 			return
@@ -555,7 +558,7 @@ func runCommand(line string) {
 		}
 		routerId := parts[2]
 		if confirm(fmt.Sprintf("Are you sure you want to create a new config with AS%d (%s)?", asn, routerId)) {
-			//nolint:golint,gosec
+			//nolint:gosec
 			if err := os.WriteFile(configFile, []byte(fmt.Sprintf(`asn: %d
 router-id: %s
 `, asn, routerId)), 0755); err != nil {
@@ -620,7 +623,11 @@ var interactiveCmd = &cobra.Command{
 		}
 
 		initRline()
-		defer rline.Close()
+		defer func() {
+			if err := rline.Close(); err != nil {
+				log.Warnf("Closing CLI: %s", err)
+			}
+		}()
 		log.SetOutput(rline.Stderr())
 
 		for {
