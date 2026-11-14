@@ -14,7 +14,6 @@ jobs:
           wget http://ftp.us.debian.org/debian/pool/main/b/bgpq4/bgpq4_0.0.6-2_amd64.deb
           sudo dpkg -i bgpq4*.deb
           sudo apt install -y bird2
-          sudo systemctl enable bird
 
       - uses: actions/setup-go@v4
         with:
@@ -29,8 +28,12 @@ jobs:
           args: -E gosec
 
       - run: go get -v -t -d ./...
-      - run: sudo chown $(whoami):$(whoami) /run/bird/bird.ctl
-      - run: sudo chown -R $(whoami):$(whoami) /etc/bird/
+      - name: Start BIRD and configure permissions
+        run: |
+          sudo systemctl enable --now bird
+          sudo systemctl is-active --quiet bird
+          sudo chown "$(whoami):$(whoami)" /run/bird/bird.ctl
+          sudo chown -R $(whoami):$(whoami) /etc/bird/
       - run: go generate -x
       - run: go build -v .
       - run: make dep
