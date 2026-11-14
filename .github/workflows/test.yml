@@ -9,11 +9,14 @@ jobs:
     name: test
     runs-on: ubuntu-latest
     steps:
+      - name: Install dependencies
+        run: |
+          sudo apt update -y
+          sudo apt install -y python3-pip iproute2
       - name: Install bgpq4 and bird2
         run: |
-          wget http://ftp.us.debian.org/debian/pool/main/b/bgpq4/bgpq4_0.0.6-2_amd64.deb
-          sudo dpkg -i bgpq4*.deb
-          sudo apt install -y bird2
+          sudo apt update -y
+          sudo apt install -y bgpq4 bird2
 
       - uses: actions/setup-go@v4
         with:
