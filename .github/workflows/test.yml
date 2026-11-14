@@ -14,6 +14,7 @@ jobs:
           wget http://ftp.us.debian.org/debian/pool/main/b/bgpq4/bgpq4_0.0.6-2_amd64.deb
           sudo dpkg -i bgpq4*.deb
           sudo apt install -y bird2
+          systemctl --user enable bird
 
       - uses: actions/setup-go@v4
         with:
