@@ -60,7 +60,7 @@ define AS{{ $peer.ASN }}_{{ $peer.ProtocolName }}_AS_SET_MEMBERS = [
 {{ if BoolDeref $peer.MPUnicast46 }}{{ $NameAF = "46" }}{{ end }}
 {{ $neighborNoIface := SplitFirst $neighbor "%" }}
 protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $NameAF $peer.ASN $peer.Tags }} {
-    local{{ if eq $af "4" }}{{ if $peer.Listen4 }} {{ $peer.Listen4 }}{{ end }}{{ else }}{{ if $peer.Listen6 }} {{ $peer.Listen6 }}{{ end }}{{ end }} as {{ if IntDeref $peer.LocalASN }}{{ IntDeref $peer.LocalASN }}{{ else }}ASN{{ end }}{{ if $peer.LocalPort }} port {{ $peer.LocalPort }}{{ end }};
+    local{{ if eq $af "4" }}{{ if $peer.Listen4 }} {{ $peer.Listen4 }}{{ end }}{{ else }}{{ if $peer.Listen6 }} {{ $peer.Listen6 }}{{ end }}{{ end }} as {{ if eq (IntDeref $peer.LocalASN) $global.ASN }}ASN{{ else }}{{ IntDeref $peer.LocalASN }}{{ end }}{{ if $peer.LocalPort }} port {{ $peer.LocalPort }}{{ end }};
     {{ if StrDeref $peer.Interface }}interface "{{ StrDeref $peer.Interface }}";{{ end }}
     neighbor {{ $neighbor }} as {{ $peer.ASN }}{{ if $peer.NeighborPort }} port {{ $peer.NeighborPort }}{{ end }};
     {{ if StrDeref $peer.Description }}description "{{ StrDeref $peer.Description }}";{{ end }}
@@ -312,6 +312,12 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $NameAF $peer.AS
             {{ end }}
 
             {{ if not (Empty $peer.OnlyAnnounce) }}
+            {{/* {{ $hasMatchingPrefixes := false }}
+            {{ range $prefix := $peer.OnlyAnnounce }}
+            {{ if or (and (eq $af "4") (Contains $prefix ".")) (and (eq $af "6") (Contains $prefix ":")) }}
+            {{ $hasMatchingPrefixes = true }}
+            {{ end }}
+            {{ end }} */}}
             {{ $hasMatchingPrefixes := false }}
             {{ range $prefix := $peer.OnlyAnnounce }}
             {{ if or (and (eq $af "4") (Contains $prefix ".")) (and (eq $af "6") (Contains $prefix ":")) }}
@@ -329,6 +335,8 @@ protocol bgp {{ UniqueProtocolName $peer.ProtocolName $peerName $NameAF $peer.AS
             {{ end }}
             {{ end }}
             ]) then _reject("prefix not in only-announce list");
+            {{ else }}
+            _reject("no prefixes configured for this address family");
             {{ end }}
             {{ end }}
 

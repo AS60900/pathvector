@@ -1,11 +1,15 @@
 package process
 
 import (
+	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/natesales/pathvector/pkg/embed"
+	"github.com/natesales/pathvector/pkg/templating"
 	"github.com/natesales/pathvector/pkg/util"
 )
 
@@ -87,6 +91,78 @@ peers:
 	assert.Equal(t, 1, len(globalConfig.Peers))
 	assert.Equal(t, 65530, *globalConfig.Peers["Example"].ASN)
 	assert.Equal(t, []string{"203.0.113.25", "2001:db8:2::25"}, *globalConfig.Peers["Example"].NeighborIPs)
+}
+
+func TestLocalASNDefaultAndRendering(t *testing.T) {
+	configFile := `
+asn: 34553
+router-id: 192.0.2.1
+templates:
+  alternate:
+    local-asn: 64513
+peers:
+  Defaulted:
+    asn: 65510
+    neighbors:
+      - 192.0.2.10
+    pre-import-accept: "print <pathvector.local-asn>;"
+  Equal:
+    asn: 65520
+    local-asn: 34553
+    neighbors:
+      - 192.0.2.20
+    pre-import-accept: "print <pathvector.local-asn>;"
+  Different:
+    asn: 65530
+    local-asn: 64512
+    neighbors:
+      - 192.0.2.30
+    pre-import-accept: "print <pathvector.local-asn>;"
+  Inherited:
+    asn: 65531
+    template: alternate
+    neighbors:
+      - 192.0.2.31
+    pre-import-accept: "print <pathvector.local-asn>;"
+`
+
+	globalConfig, err := Load([]byte(configFile))
+	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
+
+	if err := templating.Load(embed.FS); err != nil {
+		t.Fatal(err)
+	}
+
+	testCases := []struct {
+		peerName         string
+		expectedLocalASN int
+		expectedBIRDASN  string
+	}{
+		{peerName: "Defaulted", expectedLocalASN: 34553, expectedBIRDASN: "ASN"},
+		{peerName: "Equal", expectedLocalASN: 34553, expectedBIRDASN: "ASN"},
+		{peerName: "Different", expectedLocalASN: 64512, expectedBIRDASN: "64512"},
+		{peerName: "Inherited", expectedLocalASN: 64513, expectedBIRDASN: "64513"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.peerName, func(t *testing.T) {
+			peerData := globalConfig.Peers[tc.peerName]
+			assert.Equal(t, tc.expectedLocalASN, *peerData.LocalASN)
+			assert.Equal(t, fmt.Sprintf("print %d;", tc.expectedLocalASN), *peerData.PreImportAccept)
+
+			var output bytes.Buffer
+			err := templating.Template.ExecuteTemplate(&output, "peer.tmpl", &templating.Wrapper{
+				Name:   tc.peerName,
+				Peer:   *peerData,
+				Config: *globalConfig,
+			})
+			assert.NoError(t, err)
+			assert.Contains(t, output.String(), fmt.Sprintf("local as %s port 179;", tc.expectedBIRDASN))
+		})
+	}
 }
 
 func TestLoadLocalPref(t *testing.T) {

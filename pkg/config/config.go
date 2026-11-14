@@ -116,7 +116,7 @@ type Peer struct {
 	Interface              *string   `yaml:"interface" description:"Interface for link-local BGP IPv6 sessions" default:"-"`
 	Listen4                *string   `yaml:"listen4" description:"IPv4 BGP listen address" default:"-"`
 	Listen6                *string   `yaml:"listen6" description:"IPv6 BGP listen address" default:"-"`
-	LocalASN               *int      `yaml:"local-asn" description:"Local ASN as defined in the global ASN field" default:"-"`
+	LocalASN               *int      `yaml:"local-asn" description:"Local ASN, defaulting to the global ASN" default:"-"`
 	LocalPort              *int      `yaml:"local-port" description:"Local TCP port" default:"179"`
 	NeighborPort           *int      `yaml:"neighbor-port" description:"Neighbor TCP port" default:"179"`
 	Passive                *bool     `yaml:"passive" description:"Should we listen passively?" default:"false"`
@@ -356,7 +356,7 @@ type Config struct {
 	WebUIFile             string `yaml:"web-ui-file" description:"File to write web UI to (disabled if empty)" default:""`
 	LogFile               string `yaml:"log-file" description:"Log file location" default:"syslog"`
 	GlobalConfig          string `yaml:"global-config" description:"Global BIRD configuration" default:""`
-	PeeringDBURL          string `yaml:"peeringdb-url" description:"PeeringDB API URL, can be set to a local PeeringDB cache server" default:"https://peeringdb.com/api/"`
+	PeeringDBURL          string `yaml:"peeringdb-url" description:"PeeringDB API URL, can be set to a local PeeringDB cache server" default:"https://peeringdb.com/api"`
 
 	Blocklist      []string `yaml:"blocklist" description:"List of ASNs, prefixes, and IP addresses to block" default:""`
 	BlocklistURLs  []string `yaml:"blocklist-urls" description:"List of URLs to fetch blocklists from" default:""`

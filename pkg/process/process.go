@@ -309,6 +309,9 @@ func Load(configBlob []byte) (*config.Config, error) {
 				log.Tracef("[%s] skipping field %s with ignored default (-)", peerName, fieldName)
 			}
 		}
+		if peerData.LocalASN == nil {
+			peerData.LocalASN = util.Ptr(c.ASN)
+		}
 
 		if peerData.PreImportFilter != nil {
 			peerData.PreImportFilter = util.Ptr(templateReplacements(*peerData.PreImportFilter, peerData))

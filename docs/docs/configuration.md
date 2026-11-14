@@ -837,7 +837,7 @@ IPv6 BGP listen address
 
 ### `local-asn`
 
-Local ASN as defined in the global ASN field
+Local ASN, defaulting to the global ASN
 
 | Type | Default | Validation |
 | ---- | ------- | ---------- |
