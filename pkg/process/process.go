@@ -113,6 +113,30 @@ func sortCommunitiesPtr(communities *[]string) (*[]string, *[]string, error) {
 	return &standard, &large, nil
 }
 
+func resolveCommunities(names map[string]string, communities []string) []string {
+	if communities == nil {
+		return nil
+	}
+
+	out := make([]string, len(communities))
+	for i, community := range communities {
+		if resolved, ok := names[community]; ok {
+			out[i] = resolved
+		} else {
+			out[i] = community
+		}
+	}
+	return out
+}
+
+func resolveCommunitiesPtr(names map[string]string, communities *[]string) *[]string {
+	if communities == nil {
+		return nil
+	}
+	out := resolveCommunities(names, *communities)
+	return &out
+}
+
 func templateReplacements(in string, peer *config.Peer) string {
 	v := reflect.ValueOf(peer)
 	for v.Kind() == reflect.Pointer { // Dereference pointer types
@@ -147,6 +171,16 @@ func Load(configBlob []byte) (*config.Config, error) {
 	validate := validator.New()
 	if err := validate.Struct(&c); err != nil {
 		return nil, fmt.Errorf("validation: %s", err)
+	}
+
+	// Validate community names
+	for name, community := range c.Communities {
+		if categorizeCommunity(name) != "" {
+			return nil, fmt.Errorf("invalid community name %s: community names must not be communities themselves", name)
+		}
+		if categorizeCommunity(community) == "" {
+			return nil, fmt.Errorf("invalid community %s for community name %s", community, name)
+		}
 	}
 
 	// Check for invalid templates
@@ -337,6 +371,12 @@ func Load(configBlob []byte) (*config.Config, error) {
 			log.Fatalf("[%s] only-announce and announce-all cannot both be true", peerName)
 		}
 
+		// Replace community names with their communities
+		peerData.ImportCommunities = resolveCommunitiesPtr(c.Communities, peerData.ImportCommunities)
+		peerData.ExportCommunities = resolveCommunitiesPtr(c.Communities, peerData.ExportCommunities)
+		peerData.AnnounceCommunities = resolveCommunitiesPtr(c.Communities, peerData.AnnounceCommunities)
+		peerData.RemoveCommunities = resolveCommunitiesPtr(c.Communities, peerData.RemoveCommunities)
+
 		if peerData.PrependCommunities != nil {
 			log.Debugf("Peer %s: PrependCommunities: %v", peerName, peerData.PrependCommunities)
 			if peerData.PrependStandardCommunities == nil {
@@ -482,6 +522,12 @@ func Load(configBlob []byte) (*config.Config, error) {
 
 	// Categorize communities
 	var err error
+	// Replace community names with their communities
+	c.Kernel.SRDCommunities = resolveCommunities(c.Communities, c.Kernel.SRDCommunities)
+	c.OriginCommunities = resolveCommunities(c.Communities, c.OriginCommunities)
+	c.ImportCommunities = resolveCommunities(c.Communities, c.ImportCommunities)
+	c.ExportCommunities = resolveCommunities(c.Communities, c.ExportCommunities)
+	c.LocalCommunities = resolveCommunities(c.Communities, c.LocalCommunities)
 	c.Kernel.SRDStandardCommunities, c.Kernel.SRDLargeCommunities, err = sortCommunities(c.Kernel.SRDCommunities)
 	if err != nil {
 		return nil, fmt.Errorf("invalid SRD community: %v", err)
