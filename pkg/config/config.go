@@ -169,8 +169,8 @@ type Peer struct {
 	// Filtering
 	ASSet *string `yaml:"as-set" description:"Peer's as-set for filtering" default:"-"`
 
-	ImportLimit4          *int    `yaml:"import-limit4" description:"Maximum number of IPv4 prefixes to import after filtering" default:"1200000"`
-	ImportLimit6          *int    `yaml:"import-limit6" description:"Maximum number of IPv6 prefixes to import after filtering" default:"300000"`
+	ImportLimit4          *int    `yaml:"import-limit4" description:"Maximum number of IPv4 prefixes to import after filtering" default:"1500000"`
+	ImportLimit6          *int    `yaml:"import-limit6" description:"Maximum number of IPv6 prefixes to import after filtering" default:"650000"`
 	ImportLimitTripAction *string `yaml:"import-limit-violation" description:"What action should be taken when the import limit is tripped?" default:"disable"`
 
 	ReceiveLimit4          *int    `yaml:"receive-limit4" description:"Maximum number of IPv4 prefixes to accept (including filtered routes, requires keep-filtered)" default:"-"`
