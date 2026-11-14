@@ -758,6 +758,11 @@ func pipe(pipeName string, pipeData *config.PipeInstance, c *config.Config, wg *
 	log.Debugf("[%s] Wrote config", pipeName)
 }
 
+// emptyPtrSlice returns true if a slice pointer is nil or the slice has no elements
+func emptyPtrSlice[T any](s *[]T) bool {
+	return s == nil || len(*s) == 0
+}
+
 // peer processes a single peer
 func peer(peerName string, peerData *config.Peer, c *config.Config, wg *sync.WaitGroup) {
 	defer wg.Done()
@@ -774,13 +779,25 @@ func peer(peerName string, peerData *config.Peer, c *config.Config, wg *sync.Wai
 	// Build IRR prefix sets
 	if *peerData.FilterIRR {
 		if err := irr.Update(peerData, c.IRRServer, c.IRRQueryTimeout, c.BGPQArgs); err != nil {
-			log.Fatal(err)
+			log.Errorf("[%s] IRR prefix set generation failed: %v; rejecting all routes from session with AS%d", peerName, err, *peerData.ASN)
+			peerData.Import = util.Ptr(false)
+		} else if emptyPtrSlice(peerData.PrefixSet4) && emptyPtrSlice(peerData.PrefixSet6) {
+			log.Errorf("[%s] filter-irr is enabled but no prefixes were found in the IRR for AS%d; rejecting all routes from session", peerName, *peerData.ASN)
+			peerData.Import = util.Ptr(false)
 		}
 	}
 	if *peerData.AutoASSetMembers {
-		membersFromIRR, err := irr.ASMembers(*peerData.ASSet, c.IRRServer, c.IRRQueryTimeout, c.BGPQArgs)
+		var membersFromIRR []uint32
+		var err error
+
+		if peerData.ASSet == nil || *peerData.ASSet == "" {
+			err = errors.New("peer has auto-as-set-members enabled but no AS-SET was found or defined")
+		} else {
+			membersFromIRR, err = irr.ASMembers(*peerData.ASSet, c.IRRServer, c.IRRQueryTimeout, c.BGPQArgs)
+		}
 		if err != nil {
-			log.Fatal(err)
+			log.Errorf("unable to get AS-SET members: %v", err)
+			peerData.Import = util.Ptr(false)
 		}
 		if peerData.ASSetMembers == nil {
 			peerData.ASSetMembers = &membersFromIRR
@@ -791,7 +808,12 @@ func peer(peerName string, peerData *config.Peer, c *config.Config, wg *sync.Wai
 		}
 	}
 	if *peerData.FilterASSet && (peerData.ASSetMembers == nil || len(*peerData.ASSetMembers) < 1) {
-		log.Fatalf("peer has filter-as-set enabled but no members in it's as-set")
+		if !*peerData.AutoASSetMembers {
+			log.Errorf("[%s] peer has filter-as-set enabled but no members in it's as-set", peerName)
+		}
+		log.Errorf("[%s] peer has filter-as-set enabled but no members in it's as-set", peerName)
+		peerData.Import = util.Ptr(false)
+		peerData.FilterASSet = util.Ptr(false)
 	}
 
 	util.PrintStructInfo(peerName, peerData)
