@@ -33,8 +33,36 @@ jobs:
       - run: go get -v -t -d ./...
       - name: Start BIRD and configure permissions
         run: |
-          sudo systemctl enable --now bird
-          sudo systemctl is-active --quiet bird
+          # sudo systemctl enable --now bird
+          # sudo systemctl is-active --quiet bird
+          sudo install -d -m 0755 /etc/bird /run/bird
+
+          # Install the example configuration
+          sudo tee /etc/bird/bird.conf >/dev/null <<'EOF'
+          log stderr all;
+          router id 192.0.2.1;
+
+          protocol device {
+          }
+
+          protocol static {
+              ipv4;
+          }
+          EOF
+
+          # Validate the configuration
+          sudo bird -p -c /etc/bird/bird.conf
+
+          # Start BIRD directly (no systemd required)
+          sudo bird -c /etc/bird/bird.conf -s /run/bird/bird.ctl
+
+          # Wait for the control socket
+          for i in {1..20}; do
+            [ -S /run/bird/bird.ctl ] && break
+            sleep 0.25
+          done
+
+          test -S /run/bird/bird.ctl
           sudo chown "$(whoami):$(whoami)" /run/bird/bird.ctl
           sudo chown -R $(whoami):$(whoami) /etc/bird/
       - run: go generate -x
