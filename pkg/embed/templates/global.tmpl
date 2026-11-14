@@ -167,18 +167,21 @@ protocol static null6 {
 }
 
 function set_blackhole() {
-  if (net.type = NET_IP4) then {
-    bgp_next_hop = 192.0.2.1;
-    print "Added null route for ", net;
-  }
-  if (net.type = NET_IP6) then {
-    bgp_next_hop = 100::1;
-    print "Added null route for ", net;
-  }
+  if net.type = NET_IP4 then bgp_next_hop = 192.0.2.1;
+  if net.type = NET_IP6 then bgp_next_hop = 100::1;
+  dest = RTD_BLACKHOLE;
+
+  accept;
+
+  print "Added null route for ", net;
 }
 
+function is_blackholed() {
+  return ((ASN,666) ~ bgp_community || (65535,666) ~ bgp_community || (ASN,1,666) ~ bgp_large_community);
+  }
+
 function process_blackholes() {
-  if (((ASN,1,666) ~ bgp_large_community) && ((net.type = NET_IP4 && net.len = 32) || (net.type = NET_IP6 && net.len = 128))) then {
+  if (is_blackholed()) then {
     set_blackhole();
   }
 }
