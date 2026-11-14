@@ -18,8 +18,8 @@ test:
 	export PATHVECTOR_TEST=1 && go test -v -race -coverprofile=coverage.txt -covermode=atomic ./pkg/... ./cmd/...
 
 test-teardown:
-	pkill -f tests/peeringdb/peeringdb-test-api.py
+	sudo pkill -f tests/peeringdb/peeringdb-test-api.py
 	sudo ip link del dev dummy0
-	rm -f nohup.out
+	sudo rm -f nohup.out
 
 test-sequence: test-setup test test-teardown

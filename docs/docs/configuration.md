@@ -979,6 +979,22 @@ Enable BGP additional paths on import?
 | ---- | ------- | ---------- |
 | bool | false   |            |
 
+### `gateway`
+
+BGP gateway mode, 'direct' or 'recursive' (BIRD defaults to direct for directly connected eBGP neighbors and recursive otherwise)
+
+| Type   | Default | Validation |
+| ------ | ------- | ---------- |
+| string |         |            |
+
+### `cost`
+
+Distance (IGP metric) to the BGP next hop for sessions with `gateway` set to direct.
+
+| Type | Default | Validation |
+| ---- | ------- | ---------- |
+| int  |         |            |
+
 ### `import-next-hop`
 
 Rewrite the BGP next hop before importing routes learned from this peer

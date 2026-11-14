@@ -133,6 +133,8 @@ type Peer struct {
 	AllowLocalAS           *bool     `yaml:"allow-local-as" description:"Should routes originated by the local ASN be accepted?" default:"false"`
 	AddPathTx              *bool     `yaml:"add-path-tx" description:"Enable BGP additional paths on export?" default:"false"`
 	AddPathRx              *bool     `yaml:"add-path-rx" description:"Enable BGP additional paths on import?" default:"false"`
+	Gateway                *string   `yaml:"gateway" description:"BGP gateway mode, 'direct' or 'recursive' (BIRD defaults to direct for directly connected eBGP neighbors and recursive otherwise)" default:"-"`
+	Cost                   *int      `yaml:"cost" description:"Distance (IGP metric) to the BGP next hop for sessions in direct gateway mode (mainly direct sessions), used in best path selection in place of the IGP metric" default:"-"`
 	ImportNextHop          *string   `yaml:"import-next-hop" description:"Rewrite the BGP next hop before importing routes learned from this peer" default:"-"`
 	ExportNextHop          *string   `yaml:"export-next-hop" description:"Rewrite the BGP next hop before announcing routes to this peer" default:"-"`
 	Confederation          *int      `yaml:"confederation" description:"BGP confederation (RFC 5065)" default:"-"`
